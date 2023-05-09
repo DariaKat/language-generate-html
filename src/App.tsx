@@ -74,6 +74,7 @@ const App: FC = () => {
         <div className="first_form">
           <TextArea
             onChange={onChange}
+            placeholder="Введите код"
             rows={15}
             value={value}
             style={{ resize: "none" }}
@@ -82,6 +83,7 @@ const App: FC = () => {
         <div className="second_form">
           <TextArea
             rows={15}
+            placeholder="Результат"
             readOnly
             value={result}
             style={{ resize: "none" }}

@@ -3,6 +3,7 @@ import ExpressionNode from "./AST/ExpressionNode";
 import HeaderNode from "./AST/HeaderNode";
 import InputNode from "./AST/InputNode";
 import StatementsNode from "./AST/StatementsNode";
+import SubmitNode from "./AST/SubmitNode";
 import TypeInputNode from "./AST/TypeInputNode";
 import VariableNode from "./AST/VariableNode";
 import Token from "./Token/Token";
@@ -44,7 +45,6 @@ export default class Parser {
         errorCode: 1,
         errorMessage: `На позиции ${this.pos} обнаружена ошибка`,
       };
-      // throw new Error(`На позиции ${this.pos} обнаружена ошибка`);
     }
     return token;
   }
@@ -67,6 +67,10 @@ export default class Parser {
     const variable = this.match(tokenTypesList.VARIABLE);
     if (variable != null) {
       return new VariableNode(variable);
+    }
+    const submit = this.match(tokenTypesList.SUBMIT);
+    if (submit != null) {
+      return new SubmitNode(submit);
     }
     const type = this.match(tokenTypesList.TYPE);
     if (type != null) {
@@ -96,7 +100,8 @@ export default class Parser {
   parseExpression(): ExpressionNode | IError {
     if (
       this.match(tokenTypesList.INPUT) === null &&
-      this.match(tokenTypesList.HEADER) === null
+      this.match(tokenTypesList.HEADER) === null &&
+      this.match(tokenTypesList.SUBMIT) === null
     ) {
       const node = this.parseNode();
       return node; // возвращаем значение
@@ -163,8 +168,8 @@ export default class Parser {
           return `<form>\n`;
         case "FINISH":
           return `</form>\n`;
-        case "SUBMIT":
-          return `<input type="submit">\n`;
+        case "SEMICOLON":
+          return `\n`;
       }
       return `${item}\n`;
     } else {
@@ -174,13 +179,25 @@ export default class Parser {
             if (item.leftNode instanceof HeaderNode) {
               const value =
                 item.rightNode instanceof VariableNode &&
-                `<h1>${item.rightNode.variable.name[0].toUpperCase() + item.rightNode.variable.name.slice(1)}</h1>\n`;
+                `<h1>${
+                  item.rightNode.variable.name[0].toUpperCase() +
+                  item.rightNode.variable.name.slice(1)
+                }</h1>\n`;
               return value ? value : "";
             } else if (item.rightNode instanceof TypeInputNode) {
               const value = this.typeInput(item.rightNode.type.name);
               return value.length === 1
                 ? `<input type="${value[0]}" />\n`
                 : `<input type="${value[0]}" placeholder="${value[1]}"/>\n`;
+            } else if (item.leftNode instanceof SubmitNode) {
+              const value =
+                item.rightNode instanceof VariableNode &&
+                `<input type="submit" value="${
+                  item.rightNode.variable.name[0].toUpperCase() +
+                  item.rightNode.variable.name.slice(1)
+                }" />\n`;
+
+              return value ? value : "";
             } else {
               return `<input type="text" />\n`;
             }
