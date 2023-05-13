@@ -1,17 +1,32 @@
 import { FC, useState, SyntheticEvent } from "react";
-import { Button, Input, Alert } from "antd";
+import { Button, Input, Alert, Radio, Typography } from "antd";
 import "./App.css";
-import { typeInput, valueButton } from "./constant";
+import {
+  typeInput,
+  valueButton,
+  lightStyle,
+  darkStyle,
+  colorStyle,
+} from "./constant";
 import Lexer from "./Lexer";
 import Parser, { IError } from "./Parser";
 import StatementsNode from "./AST/StatementsNode";
+import type { RadioChangeEvent } from "antd";
+import parse from "html-react-parser";
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const App: FC = () => {
   const [value, setValue] = useState("");
   const [result, setResult] = useState("");
+  const [style, setStyle] = useState("");
+  const [radio, setRadio] = useState<string>("");
   const [error, setError] = useState<IError | null>(null);
+
+  const onChangeRadio = (e: RadioChangeEvent) => {
+    setRadio(e.target.value);
+  };
 
   const onChange = (event: SyntheticEvent<HTMLTextAreaElement>) => {
     if (event.currentTarget) {
@@ -23,6 +38,19 @@ const App: FC = () => {
     setValue(value + e.currentTarget?.value);
   };
 
+  const styleClick = (item: string) => {
+    switch (item) {
+      case "light":
+        return lightStyle;
+      case "dark":
+        return darkStyle;
+      case "color":
+        return colorStyle;
+      default:
+        return lightStyle;
+    }
+  };
+
   const onClickGenerate = () => {
     setResult("");
     const lexer = new Lexer(value);
@@ -30,6 +58,7 @@ const App: FC = () => {
     const rootNode = parser.parseCode();
     if (rootNode instanceof StatementsNode) {
       setResult(parser.run(rootNode));
+      setStyle(styleClick(radio));
       setError(null);
     } else {
       setError(rootNode);
@@ -39,6 +68,8 @@ const App: FC = () => {
   const onClickClear = () => {
     setValue("");
     setResult("");
+    setStyle("");
+    setRadio("");
     setError(null);
   };
 
@@ -70,24 +101,50 @@ const App: FC = () => {
           </Button>
         ))}
       </div>
+      <div className="header">
+        <span className="label">Стиль формы: </span>
+        <Radio.Group onChange={onChangeRadio} value={radio}>
+          <Radio.Button value={"light"}>Светлая тема</Radio.Button>
+          <Radio.Button value={"dark"}>Темная тема</Radio.Button>
+          <Radio.Button value={"color"}>Цветная тема</Radio.Button>
+        </Radio.Group>
+      </div>
       <div className="main">
         <div className="first_form">
           <TextArea
             onChange={onChange}
             placeholder="Введите код"
-            rows={15}
+            rows={17}
             value={value}
             style={{ resize: "none" }}
           />
         </div>
         <div className="second_form">
           <TextArea
-            rows={15}
-            placeholder="Результат"
+            rows={17}
+            placeholder="html-код"
             readOnly
             value={result}
             style={{ resize: "none" }}
           />
+        </div>
+        <div className="third_form">
+          <TextArea
+            rows={17}
+            placeholder="Стили"
+            readOnly
+            value={style}
+            style={{ resize: "none" }}
+          />
+        </div>
+        <div className="fourth_form">
+          <div className={radio.length !== 0 ? radio : "default"}>
+            {result ? (
+              parse(result)
+            ) : (
+              <Text disabled>Здесь будет визуализация формы</Text>
+            )}
+          </div>
         </div>
       </div>
       <div className="error">

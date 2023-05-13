@@ -3,10 +3,9 @@ import Token from "../Token/Token";
 
 export default class VariableNode extends ExpressionNode {
   // для значений
-  variable: Token;
+  variable: Token[] = [];
 
-  constructor(variable: Token) {
-    super();
-    this.variable = variable;
+  addNode(variable: Token) {
+    this.variable.push(variable);
   }
 }

@@ -14,7 +14,7 @@ export const tokenTypesList = {
   NUMBER: new TokenType("NUMBER", "[0-9]*"),
   TYPE: new TokenType(
     "TYPE",
-    "(ПОЧТА|ТЕКСТ|ЧЕКБОКС_КНОПКА|РАДИО_КНОПКА|ПАРОЛЬ)"
+    "(ТИП_ПОЧТА|ТИП_ТЕКСТ|ТИП_ЧЕКБОКС_КНОПКА|ТИП_РАДИО_КНОПКА|ТИП_ПАРОЛЬ)"
   ),
   VARIABLE: new TokenType("VARIABLE", "[а-я]*"),
   SEMICOLON: new TokenType("SEMICOLON", "\\n"),
@@ -23,6 +23,10 @@ export const tokenTypesList = {
   INPUT: new TokenType("INPUT", "ПОЛЕ_ВВОДА"),
   HEADER: new TokenType("HEADER", "ЗАГОЛОВОК"),
   QUOTES: new TokenType("QUOTES", `[\\"\\']`),
+  BRACKETS_LEFT: new TokenType("BRACKETS_LEFT", `\\(`),
+  BRACKETS_RIGHT: new TokenType("BRACKETS_RIGHT", `\\)`),
+  COMMA: new TokenType("COMMA", `\\,`),
+  DESCRIPTION: new TokenType("DESCRIPTION", "ОПИСАНИЕ"),
   SUBMIT: new TokenType("SUBMIT", "ОТПРАВИТЬ"),
   START: new TokenType("START", "НАЧАЛО_ФОРМЫ"),
   FINISH: new TokenType("FINISH", "КОНЕЦ_ФОРМЫ"),

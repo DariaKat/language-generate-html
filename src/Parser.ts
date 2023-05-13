@@ -57,7 +57,7 @@ export default class Parser {
   }
 
   //парсинг переменных, поля ввода, заголовок, кнопки отправить и типа
-  parseVariableAndInput(): ExpressionNode | IError {
+  parseInput(): ExpressionNode | IError {
     const input = this.match(tokenTypesList.INPUT);
     if (input != null) {
       return new InputNode(input);
@@ -65,10 +65,6 @@ export default class Parser {
     const header = this.match(tokenTypesList.HEADER);
     if (header != null) {
       return new HeaderNode(header);
-    }
-    const variable = this.match(tokenTypesList.VARIABLE);
-    if (variable != null) {
-      return new VariableNode(variable);
     }
     const submit = this.match(tokenTypesList.SUBMIT);
     if (submit != null) {
@@ -84,23 +80,53 @@ export default class Parser {
     };
   }
 
-  parseParentheses(): ExpressionNode | IError {
-    if (this.match(tokenTypesList.QUOTES) != null) {
+  parseVariable(): ExpressionNode | IError {
+    if (this.match(tokenTypesList.QUOTES) !== null) {
       // если в начале есть кавычка
-      const node = this.parseFormula(); // внутри может находится значение
+      let variable = this.match(tokenTypesList.VARIABLE);
+      let node: any = new VariableNode(); // внутри может находится значение
+      while (variable !== null) {
+        node.addNode(variable);
+        variable = this.match(tokenTypesList.VARIABLE);
+      }
       const info = this.require(tokenTypesList.QUOTES); // ожидаем что она закрыта
-
       const error = info as IError;
-
       return error?.errorMessage ? error : node; // возвращаем узел
     } else {
-      return this.parseVariableAndInput(); // для обработки типа или значения, возвращаем
+      return {
+        errorCode: 1,
+        errorMessage: `Ожидаются кавчки на ${this.pos} позиции`,
+      };
+    }
+  }
+
+  parseParentheses(): ExpressionNode | IError {
+    if (this.match(tokenTypesList.DESCRIPTION) !== null) {
+      return this.parseVariable();
+    } else if (this.match(tokenTypesList.QUOTES) !== null) {
+      this.pos -= 1;
+      return this.parseVariable();
+    } else if (this.match(tokenTypesList.BRACKETS_LEFT) !== null) {
+      const node = this.parseFormula();
+      const info = this.require(tokenTypesList.BRACKETS_RIGHT);
+      const error = info as IError;
+      return error?.errorMessage ? error : node;
+    } else {
+      return this.parseInput(); // для обработки типа или значения, возвращаем
     }
   }
 
   //правый операнд
   parseFormula(): ExpressionNode | IError {
     let leftNode = this.parseParentheses();
+    let operator = this.match(tokenTypesList.COMMA);
+
+    if (operator !== null) {
+      const rightNode = this.parseParentheses();
+      leftNode = new BinOperationNode(operator, leftNode, rightNode);
+      operator = this.match(tokenTypesList.COMMA);
+    }
+
     return leftNode;
   }
 
@@ -117,7 +143,7 @@ export default class Parser {
       return node; // возвращаем значение
     }
     this.pos -= 1; // если это поле ввода, кнопка отправить или заголовок то возвращаемся на позиуию назад (из-за функции match)
-    let variableAndInput = this.parseVariableAndInput(); // вызываем метод для обработки типов
+    let variableAndInput = this.parseInput(); // вызываем метод для обработки типов
     const assignOperator = this.match(tokenTypesList.ASSIGN); // следующим должен быть оператор присвоения
     if (assignOperator !== null) {
       const rightFormulaNode = this.parseFormula(); // парсим формулу
@@ -176,21 +202,58 @@ export default class Parser {
     }
   }
 
-  typeInput(item: string): string[] {
+  stringCreate(item: any) {
+    return (
+      item instanceof VariableNode &&
+      item.variable.map((item: any) => item.name).join(" ")
+    );
+  }
+
+  typeInput(item: string): string {
     // обработка типов
     switch (item) {
-      case "ПАРОЛЬ":
-        return ["password", "Введите пароль"];
-      case "ТЕКСТ":
-        return ["text", "Введите текст"];
-      case "ПОЧТА":
-        return ["email", "Введите почту"];
-      case "ЧЕКБОКС_КНОПКА":
-        return ["checkbox"];
-      case "РАДИО_КНОПКА":
-        return ["radio"];
+      case "ТИП_ПАРОЛЬ":
+        return "password";
+      case "ТИП_ТЕКСТ":
+        return "text";
+      case "ТИП_ПОЧТА":
+        return "email";
+      case "ТИП_ЧЕКБОКС_КНОПКА":
+        return "checkbox";
+      case "ТИП_РАДИО_КНОПКА":
+        return "radio";
     }
-    return ["text"];
+    return "text";
+  }
+
+  getInfoInput(item: any): string {
+    // обработка типов
+    if (item instanceof BinOperationNode) {
+      switch (
+        item.operator.type.name // смотрим на оператор
+      ) {
+        case tokenTypesList.COMMA.name:
+          if (
+            item.rightNode instanceof VariableNode &&
+            item.leftNode instanceof TypeInputNode
+          ) {
+            const type =
+              item.leftNode.type instanceof Token &&
+              this.typeInput(item.leftNode.type.name);
+            const placeholder: any = this.stringCreate(item.rightNode);
+
+            return type === "radio" || type === "checkbox"
+              ? `<label><input type="${type}" name="radio"/>${
+                  placeholder[0].toUpperCase() + placeholder.slice(1)
+                }</label>`
+              : `<input type="${type}" placeholder="${
+                  placeholder[0].toUpperCase() + placeholder.slice(1)
+                }"/>\n`;
+          }
+      }
+      return "";
+    }
+    return "";
   }
 
   //перевод в html
@@ -214,35 +277,26 @@ export default class Parser {
         ) {
           case tokenTypesList.ASSIGN.name:
             if (item.leftNode instanceof HeaderNode) {
+              const getValue: any = this.stringCreate(item.rightNode);
               // если заголовок
-              const value =
-                item.rightNode instanceof VariableNode &&
-                `<h1>${
-                  item.rightNode.variable.name[0].toUpperCase() +
-                  item.rightNode.variable.name.slice(1)
-                }</h1>\n`;
+              const value = `<h1>${
+                getValue[0].toUpperCase() + getValue.slice(1)
+              }</h1>\n`;
               return value ? value : "";
             } else if (item.leftNode instanceof InputNode) {
-              if (item.rightNode instanceof TypeInputNode) {
+              if (item.rightNode instanceof BinOperationNode) {
                 // если тип
-                const value = this.typeInput(item.rightNode.type.name);
-                return value.length === 1
-                  ? `<input type="${value[0]}" />\n`
-                  : `<input type="${value[0]}" placeholder="${value[1]}"/>\n`;
+                const value = this.getInfoInput(item.rightNode);
+                return value;
               } else {
-                return `<input type='text' placeholder="${
-                  item.rightNode instanceof VariableNode &&
-                  item.rightNode.variable.name
-                }"/>\n`;
+                return `\n`;
               }
             } else if (item.leftNode instanceof SubmitNode) {
+              const getValue: any = this.stringCreate(item.rightNode);
               // если кнопка отправить
-              const value =
-                item.rightNode instanceof VariableNode &&
-                `<input type="submit" value="${
-                  item.rightNode.variable.name[0].toUpperCase() +
-                  item.rightNode.variable.name.slice(1)
-                }" />\n`;
+              const value = `<button type="submit">${
+                getValue[0].toUpperCase() + getValue.slice(1)
+              }</button>\n`;
 
               return value ? value : "";
             } else {
