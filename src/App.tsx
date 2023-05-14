@@ -138,7 +138,7 @@ const App: FC = () => {
           />
         </div>
         <div className="fourth_form">
-          <div className={radio.length !== 0 ? radio : "default"}>
+          <div className={radio.length !== 0 ? radio : "default light"}>
             {result ? (
               parse(result)
             ) : (
