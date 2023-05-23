@@ -2,12 +2,12 @@ import ExpressionNode from "./ExpressionNode";
 import Token from "../Token/Token";
 
 export default class BinOperationNode extends ExpressionNode {
-  operator: Token;
+  operator: Token | null;
   leftNode: ExpressionNode;
   rightNode: ExpressionNode;
 
   constructor(
-    operator: Token,
+    operator: Token | null,
     leftNode: ExpressionNode,
     rightNode: ExpressionNode
   ) {

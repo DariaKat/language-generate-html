@@ -51,9 +51,25 @@ export default class Parser {
 
   // возвращаем тип и двигаемся по позиции
   parseNode(): ExpressionNode {
-    const name = this.tokens[this.pos].type.name;
-    this.pos += 1;
-    return name;
+    const input = this.match(tokenTypesList.INPUT); //для типа инпут
+    if (input != null) {
+      if (this.match(tokenTypesList.BRACKETS_LEFT) !== null) {
+        const node = this.parseFormula();
+        const info = this.require(tokenTypesList.BRACKETS_RIGHT);
+        const error = info as IError;
+        return error?.errorMessage
+          ? error
+          : new BinOperationNode(null, input, node); // обработка операции
+      }
+      return {
+        errorCode: 1,
+        errorMessage: `На позиции ${this.pos} обнаружена ошибка`,
+      };
+    } else {
+      const name = this.tokens[this.pos].type.name;
+      this.pos += 1;
+      return name;
+    }
   }
 
   //парсинг переменных, поля ввода, заголовок, кнопки отправить и типа
@@ -101,16 +117,9 @@ export default class Parser {
   }
 
   parseParentheses(): ExpressionNode | IError {
-    if (this.match(tokenTypesList.DESCRIPTION) !== null) {
-      return this.parseVariable();
-    } else if (this.match(tokenTypesList.QUOTES) !== null) {
+    if (this.match(tokenTypesList.QUOTES) !== null) {
       this.pos -= 1;
       return this.parseVariable();
-    } else if (this.match(tokenTypesList.BRACKETS_LEFT) !== null) {
-      const node = this.parseFormula();
-      const info = this.require(tokenTypesList.BRACKETS_RIGHT);
-      const error = info as IError;
-      return error?.errorMessage ? error : node;
     } else {
       return this.parseInput(); // для обработки типа или значения, возвращаем
     }
@@ -135,14 +144,13 @@ export default class Parser {
     // проверка для парсинга
     if (
       //проверка какой первый тип
-      this.match(tokenTypesList.INPUT) === null &&
       this.match(tokenTypesList.HEADER) === null &&
       this.match(tokenTypesList.SUBMIT) === null
     ) {
-      const node = this.parseNode(); // если это не заголовок, кнопка отправить и поле ввода, то вызываем метод, который вернет строку с типом
+      const node = this.parseNode(); // если это не заголовок, кнопка отправить, то вызываем метод, который вернет строку с типом
       return node; // возвращаем значение
     }
-    this.pos -= 1; // если это поле ввода, кнопка отправить или заголовок то возвращаемся на позиуию назад (из-за функции match)
+    this.pos -= 1; // если это кнопка отправить или заголовок то возвращаемся на позиуию назад (из-за функции match)
     let variableAndInput = this.parseInput(); // вызываем метод для обработки типов
     const assignOperator = this.match(tokenTypesList.ASSIGN); // следующим должен быть оператор присвоения
     if (assignOperator !== null) {
@@ -230,7 +238,7 @@ export default class Parser {
     // обработка типов
     if (item instanceof BinOperationNode) {
       switch (
-        item.operator.type.name // смотрим на оператор
+        item.operator?.type.name // смотрим на оператор
       ) {
         case tokenTypesList.COMMA.name:
           if (
@@ -245,7 +253,7 @@ export default class Parser {
             return type === "radio" || type === "checkbox"
               ? `<label><input type="${type}" name="radio"/>${
                   placeholder[0].toUpperCase() + placeholder.slice(1)
-                }</label>`
+                }</label>\n`
               : `<input type="${type}" placeholder="${
                   placeholder[0].toUpperCase() + placeholder.slice(1)
                 }"/>\n`;
@@ -273,7 +281,7 @@ export default class Parser {
       if (item instanceof BinOperationNode) {
         // иначе это формула
         switch (
-          item.operator.type.name // смотрим на оператор
+          item.operator?.type.name // смотрим на оператор
         ) {
           case tokenTypesList.ASSIGN.name:
             if (item.leftNode instanceof HeaderNode) {
@@ -283,14 +291,6 @@ export default class Parser {
                 getValue[0].toUpperCase() + getValue.slice(1)
               }</h1>\n`;
               return value ? value : "";
-            } else if (item.leftNode instanceof InputNode) {
-              if (item.rightNode instanceof BinOperationNode) {
-                // если тип
-                const value = this.getInfoInput(item.rightNode);
-                return value;
-              } else {
-                return `\n`;
-              }
             } else if (item.leftNode instanceof SubmitNode) {
               const getValue: any = this.stringCreate(item.rightNode);
               // если кнопка отправить
@@ -302,6 +302,16 @@ export default class Parser {
             } else {
               return ``;
             }
+          case undefined:
+            if (item.leftNode instanceof Token) {
+              if (item.rightNode instanceof BinOperationNode) {
+                // если тип
+                const value = this.getInfoInput(item.rightNode);
+                return value;
+              } else {
+                return `\n`;
+              }
+            }
         }
       }
       return "";
@@ -311,11 +321,21 @@ export default class Parser {
   //обработка узлов
   run(node: ExpressionNode): any {
     let data = "";
+    let style = "";
     if (node instanceof StatementsNode) {
       node.codeStrings.forEach((codeString: any) => {
-        data += this.coutCodeHtml(codeString);
+        if (
+          typeof codeString === "string" &&
+          (codeString === "LIGHT" ||
+            codeString === "DARK" ||
+            codeString === "COLOR")
+        ) {
+          style = codeString;
+        } else {
+          data += this.coutCodeHtml(codeString);
+        }
       });
-      return data;
+      return { data: data, style: style };
     }
   }
 }

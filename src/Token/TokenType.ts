@@ -16,6 +16,9 @@ export const tokenTypesList = {
     "TYPE",
     "(ТИП_ПОЧТА|ТИП_ТЕКСТ|ТИП_ЧЕКБОКС_КНОПКА|ТИП_РАДИО_КНОПКА|ТИП_ПАРОЛЬ)"
   ),
+  LIGHT: new TokenType("LIGHT", "СВЕТЛАЯ_ТЕМА"),
+  DARK: new TokenType("DARK", "ТЕМНАЯ_ТЕМА"),
+  COLOR: new TokenType("COLOR", "ЦВЕТНАЯ_ТЕМА"),
   VARIABLE: new TokenType("VARIABLE", "[а-я]*"),
   SEMICOLON: new TokenType("SEMICOLON", "\\n"),
   SPACE: new TokenType("SPACE", "[ \\t\\r]"),

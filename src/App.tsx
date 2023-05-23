@@ -25,7 +25,7 @@ const App: FC = () => {
   const [error, setError] = useState<IError | null>(null);
 
   const onChangeRadio = (e: RadioChangeEvent) => {
-    setRadio(e.target.value);
+    setValue(value + e.target?.value);
   };
 
   const onChange = (event: SyntheticEvent<HTMLTextAreaElement>) => {
@@ -40,11 +40,11 @@ const App: FC = () => {
 
   const styleClick = (item: string) => {
     switch (item) {
-      case "light":
+      case "LIGHT":
         return lightStyle;
-      case "dark":
+      case "DARK":
         return darkStyle;
-      case "color":
+      case "COLOR":
         return colorStyle;
       default:
         return lightStyle;
@@ -57,8 +57,10 @@ const App: FC = () => {
     const parser = new Parser(lexer.lexAnalysis());
     const rootNode = parser.parseCode();
     if (rootNode instanceof StatementsNode) {
-      setResult(parser.run(rootNode));
-      setStyle(styleClick(radio));
+      const resultHtml = parser.run(rootNode);
+      setResult(resultHtml.data);
+      setStyle(styleClick(resultHtml.style));
+      setRadio(resultHtml.style.toLowerCase());
       setError(null);
     } else {
       setError(rootNode);
@@ -104,9 +106,9 @@ const App: FC = () => {
       <div className="header">
         <span className="label">Стиль формы: </span>
         <Radio.Group onChange={onChangeRadio} value={radio}>
-          <Radio.Button value={"light"}>Светлая тема</Radio.Button>
-          <Radio.Button value={"dark"}>Темная тема</Radio.Button>
-          <Radio.Button value={"color"}>Цветная тема</Radio.Button>
+          <Radio.Button value={"СВЕТЛАЯ_ТЕМА"}>Светлая тема</Radio.Button>
+          <Radio.Button value={"ТЕМНАЯ_ТЕМА"}>Темная тема</Radio.Button>
+          <Radio.Button value={"ЦВЕТНАЯ_ТЕМА"}>Цветная тема</Radio.Button>
         </Radio.Group>
       </div>
       <div className="main">

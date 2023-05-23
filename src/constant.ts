@@ -5,7 +5,6 @@ export const valueButton = [
   { id: 6, value: "=", name: "Равно" },
   { id: 7, value: "ОТПРАВИТЬ", name: "Кнопка отправить" },
   { id: 2, value: "КОНЕЦ_ФОРМЫ", name: "Конец формы" },
-  { id: 5, value: "ОПИСАНИЕ", name: "Описание" },
 ];
 
 export const typeInput = [
