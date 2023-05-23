@@ -11,7 +11,6 @@ export default class TokenType {
 }
 
 export const tokenTypesList = {
-  NUMBER: new TokenType("NUMBER", "[0-9]*"),
   TYPE: new TokenType(
     "TYPE",
     "(ТИП_ПОЧТА|ТИП_ТЕКСТ|ТИП_ЧЕКБОКС_КНОПКА|ТИП_РАДИО_КНОПКА|ТИП_ПАРОЛЬ)"
@@ -19,7 +18,7 @@ export const tokenTypesList = {
   LIGHT: new TokenType("LIGHT", "СВЕТЛАЯ_ТЕМА"),
   DARK: new TokenType("DARK", "ТЕМНАЯ_ТЕМА"),
   COLOR: new TokenType("COLOR", "ЦВЕТНАЯ_ТЕМА"),
-  VARIABLE: new TokenType("VARIABLE", "[а-я]*"),
+  VARIABLE: new TokenType("VARIABLE", "[а-я0-9]*"),
   SEMICOLON: new TokenType("SEMICOLON", "\\n"),
   SPACE: new TokenType("SPACE", "[ \\t\\r]"),
   ASSIGN: new TokenType("ASSIGN", "\\="),
